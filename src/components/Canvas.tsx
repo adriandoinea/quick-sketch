@@ -1,22 +1,41 @@
 import { useEffect, useRef, useState } from "react";
-import { useAppSelector } from "@/app/hooks";
 import Tools from "@/components/Tools";
+import { useAppDispatch, useAppSelector } from "@/app/hooks";
+import { draw } from "@/lib/utils";
+import {
+  addDrawing,
+  addDrawingAndSplice,
+  resetDrawings,
+} from "@/features/drawings/drawingsSlice";
+import { switchTool } from "@/features/toolbar/toolbarSlice";
 
 export default function Canvas() {
   const canvasRef = useRef<null | HTMLCanvasElement>(null);
   const ctxRef = useRef<null | CanvasRenderingContext2D>(null);
+
+  const drawings = useAppSelector((state) => state.drawings);
   const [isDrawing, setIsDrawing] = useState(false);
+  const [currentStep, setCurrentStep] = useState(-1);
+  const [currentPoints, setCurrentPoints] = useState<
+    { x: number; y: number }[]
+  >([]);
 
   const tool = useAppSelector((state) => state.toolbar.tool);
   const brushSize = useAppSelector((state) => state.toolbar.brushSize);
   const brushColor = useAppSelector((state) => state.toolbar.brushColor);
   const isEraser = tool === "eraser";
 
+  const dispatch = useAppDispatch();
+
+  const isUndoDisabled = currentStep < 0;
+  const isRedoDisabled = currentStep === drawings.length - 1;
+
   useEffect(() => {
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext("2d");
     if (!ctx) return;
     ctx.strokeStyle = isEraser ? "white" : brushColor;
+    ctx.fillStyle = isEraser ? "white" : brushColor;
     ctx.lineWidth = brushSize;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
@@ -30,13 +49,8 @@ export default function Canvas() {
   ) => {
     ctxRef.current?.beginPath();
     ctxRef.current?.moveTo(e.nativeEvent.offsetX, e.nativeEvent.offsetY);
+    setCurrentPoints([{ x: e.nativeEvent.offsetX, y: e.nativeEvent.offsetY }]);
     setIsDrawing(true);
-  };
-
-  const handleMouseUp = () => {
-    ctxRef.current?.closePath();
-
-    setIsDrawing(false);
   };
 
   const handleMouseMove = (
@@ -47,6 +61,17 @@ export default function Canvas() {
     }
     ctxRef.current?.lineTo(e.nativeEvent.offsetX, e.nativeEvent.offsetY);
     ctxRef.current?.stroke();
+
+    setCurrentPoints((prev) => [
+      ...prev,
+      { x: e.nativeEvent.offsetX, y: e.nativeEvent.offsetY },
+    ]);
+  };
+
+  const handleMouseUp = () => {
+    checkIfOnlyClicked();
+    storeDrawing();
+    setIsDrawing(false);
   };
 
   const handleTouchStart = (e: React.TouchEvent<HTMLCanvasElement>) => {
@@ -56,6 +81,7 @@ export default function Canvas() {
     const y = e.touches[0].clientY - rect.y;
     ctxRef.current?.beginPath();
     ctxRef.current?.moveTo(x, y);
+    setCurrentPoints([{ x, y }]);
     setIsDrawing(true);
   };
 
@@ -68,27 +94,93 @@ export default function Canvas() {
     const y = e.touches[0].clientY - rect.y;
     ctxRef.current?.lineTo(x, y);
     ctxRef.current?.stroke();
+
+    setCurrentPoints((prev) => [...prev, { x, y }]);
   };
 
-  const handleTouchEnd = () => {
-    ctxRef.current?.closePath();
+  const handleTouchEnd = (e: React.TouchEvent<HTMLCanvasElement>) => {
+    e.preventDefault();
+    checkIfOnlyClicked();
+    storeDrawing();
     setIsDrawing(false);
   };
 
-  const handleCanvasClear = () => {
-    if (canvasRef.current) {
+  const handleUndo = () => {
+    const prevStep = currentStep - 1;
+    if (prevStep >= -1) {
+      draw(drawings, prevStep, canvasRef.current);
+      setCurrentStep(prevStep);
+    }
+
+    //Set the  tool to pencil if the the currentStep will be negative (nothing to draw)
+    if (prevStep < 0 && isEraser) {
+      dispatch(switchTool("pencil"));
+    }
+  };
+
+  const handleRedo = () => {
+    const nextStep = currentStep + 1;
+    if (nextStep < drawings.length) {
+      draw(drawings, nextStep, canvasRef.current);
+      setCurrentStep(nextStep);
+    }
+  };
+
+  const clearCanvas = () => {
+    const confirmation = confirm(
+      "Are you sure you want to clear your drawings?"
+    );
+    if (confirmation && canvasRef.current) {
       ctxRef.current?.clearRect(
         0,
         0,
         canvasRef.current.width,
         canvasRef.current.height
       );
+
+      setCurrentStep(-1);
+      dispatch(resetDrawings());
+    }
+  };
+
+  const checkIfOnlyClicked = () => {
+    // Checking if it's just a click
+    if (ctxRef.current && currentPoints.length === 1) {
+      const { x, y } = currentPoints[0];
+      ctxRef.current.arc(x, y, brushSize / 2, 0, 2 * Math.PI);
+      ctxRef.current.fill();
+    }
+  };
+
+  const storeDrawing = () => {
+    if (currentPoints.length > 0 && ctxRef.current) {
+      const drawing = {
+        color: ctxRef.current.strokeStyle,
+        lineWidth: ctxRef.current.lineWidth,
+        points: currentPoints,
+        globalCompositeOperation: ctxRef.current.globalCompositeOperation,
+      };
+
+      if (currentStep < drawings.length - 1) {
+        dispatch(addDrawingAndSplice({ drawing, index: currentStep }));
+      } else {
+        dispatch(addDrawing(drawing));
+      }
+      setCurrentStep((prev) => prev + 1);
+      setCurrentPoints([]);
     }
   };
 
   return (
     <div className="flex flex-col justify-center gap-4 px-8 py-4">
-      <Tools onClear={handleCanvasClear} />
+      <Tools
+        isUndoDisabled={isUndoDisabled}
+        isRedoDisabled={isRedoDisabled}
+        isEraserDisabled={currentStep < 0}
+        onClear={clearCanvas}
+        onUndo={handleUndo}
+        onRedo={handleRedo}
+      />
       <div className="w-full flex justify-center">
         <canvas
           ref={canvasRef}

@@ -15,7 +15,23 @@ import {
   switchTool,
 } from "@/features/toolbar/toolbarSlice";
 
-export default function Tools({ onClear }: { onClear: () => void }) {
+interface ToolsProps {
+  isUndoDisabled: boolean;
+  isRedoDisabled: boolean;
+  isEraserDisabled: boolean;
+  onClear: () => void;
+  onUndo: () => void;
+  onRedo: () => void;
+}
+
+export default function Tools({
+  isUndoDisabled,
+  isRedoDisabled,
+  isEraserDisabled,
+  onClear,
+  onUndo,
+  onRedo,
+}: ToolsProps) {
   const tool = useAppSelector((state) => state.toolbar.tool);
   const brushSize = useAppSelector((state) => state.toolbar.brushSize);
   const brushColor = useAppSelector((state) => state.toolbar.brushColor);
@@ -41,6 +57,9 @@ export default function Tools({ onClear }: { onClear: () => void }) {
           className="rounded-full border w-10 h-10"
           variant="outline"
           size="icon"
+          onClick={onUndo}
+          disabled={isUndoDisabled}
+          title="Undo"
         >
           <ArrowLeftCircleIcon className="w-4 h-4" />
           <span className="sr-only">Undo</span>
@@ -49,6 +68,9 @@ export default function Tools({ onClear }: { onClear: () => void }) {
           className="rounded-full border w-10 h-10"
           variant="outline"
           size="icon"
+          onClick={onRedo}
+          disabled={isRedoDisabled}
+          title="Redo"
         >
           <ArrowRightCircleIcon className="w-4 h-4" />
           <span className="sr-only">Redo</span>
@@ -58,6 +80,7 @@ export default function Tools({ onClear }: { onClear: () => void }) {
           variant="outline"
           size="icon"
           onClick={onClear}
+          title="Clear"
         >
           <TrashIcon className="w-4 h-4" />
           <span className="sr-only">Clear</span>
@@ -95,6 +118,7 @@ export default function Tools({ onClear }: { onClear: () => void }) {
               value="eraser"
               checked={tool === "eraser"}
               onChange={handleToolChange}
+              disabled={isEraserDisabled}
             />
             <span>Eraser</span>
           </Label>

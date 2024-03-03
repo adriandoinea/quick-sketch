@@ -1,10 +1,11 @@
 export interface Line {
   points: { x: number; y: number }[];
-  color: string;
-  size: number;
+  color: string | CanvasGradient | CanvasPattern;
+  lineWidth: number;
+  globalCompositeOperation: string;
 }
 
-export type Drawings = Record<
-  "previous" | "current" | "future",
-  Record<number, Line>
->;
+export interface Drawings {
+  history: Line[];
+  currentStep: number;
+}
