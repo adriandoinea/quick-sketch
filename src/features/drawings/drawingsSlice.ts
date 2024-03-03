@@ -2,27 +2,34 @@ import { Line } from "@/types";
 import { createSlice } from "@reduxjs/toolkit";
 import { PayloadAction } from "@reduxjs/toolkit/react";
 
-const initialState: Line[] = [];
+const initialState: Line[] = localStorage.getItem("drawings")
+  ? JSON.parse(localStorage.getItem("drawings")!)
+  : [];
 
 const drawingsSlice = createSlice({
   name: "drawings",
   initialState,
   reducers: {
     addDrawing: (state, action: PayloadAction<Line>) => {
-      return [...state, action.payload];
+      const newDrawing = [...state, action.payload];
+      localStorage.setItem("drawings", JSON.stringify(newDrawing));
+      return newDrawing;
     },
     addDrawingAndSplice: (
       state,
       action: PayloadAction<{ drawing: Line; index: number }>
     ) => {
       const { drawing, index } = action.payload;
-      const temp = [...state];
-      temp.splice(index + 1);
-      temp.push(drawing);
-
-      return temp;
+      const tempDrawings = [...state];
+      tempDrawings.splice(index + 1);
+      tempDrawings.push(drawing);
+      localStorage.setItem("drawings", JSON.stringify(tempDrawings));
+      return tempDrawings;
     },
-    resetDrawings: () => [],
+    resetDrawings: () => {
+      localStorage.setItem("drawings", JSON.stringify([]));
+      return [];
+    },
   },
 });
 

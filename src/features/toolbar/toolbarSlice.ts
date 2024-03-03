@@ -6,11 +6,13 @@ interface ToolbarState {
   brushColor: string;
 }
 
-const initialState: ToolbarState = {
-  tool: "pencil",
-  brushSize: 10,
-  brushColor: "#000000",
-};
+const initialState: ToolbarState = localStorage.getItem("drawingTools")
+  ? JSON.parse(localStorage.getItem("drawingTools")!)
+  : {
+      tool: "pencil",
+      brushSize: 10,
+      brushColor: "#000000",
+    };
 
 const toolbarSlice = createSlice({
   name: "toolbar",
@@ -20,14 +22,20 @@ const toolbarSlice = createSlice({
       state: ToolbarState,
       action: PayloadAction<"pencil" | "eraser">
     ) => {
-      return { ...state, tool: action.payload };
+      const newConfig = { ...state, tool: action.payload };
+      localStorage.setItem("drawingTools", JSON.stringify(newConfig));
+      return newConfig;
     },
     changeBrushSize: (state: ToolbarState, action: PayloadAction<number>) => {
-      return { ...state, brushSize: action.payload };
+      const newConfig = { ...state, brushSize: action.payload };
+      localStorage.setItem("drawingTools", JSON.stringify(newConfig));
+      return newConfig;
     },
 
     changeBrushColor: (state: ToolbarState, action: PayloadAction<string>) => {
-      return { ...state, brushColor: action.payload };
+      const newConfig = { ...state, brushColor: action.payload };
+      localStorage.setItem("drawingTools", JSON.stringify(newConfig));
+      return newConfig;
     },
   },
 });

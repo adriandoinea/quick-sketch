@@ -77,6 +77,13 @@ export default function Canvas() {
     };
   }, [brushColor, brushSize, configBrushStyles, isEraser]);
 
+  useEffect(() => {
+    if (drawings.length > 0) {
+      draw(drawings, drawings.length - 1, canvasRef.current);
+      setCurrentStep(drawings.length - 1);
+    }
+  }, [drawings]);
+
   const handleMouseDown = (
     e: React.MouseEvent<HTMLCanvasElement, MouseEvent>
   ) => {
