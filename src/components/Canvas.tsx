@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Tools from "@/components/Tools";
 import { useAppDispatch, useAppSelector } from "@/app/hooks";
 import { draw } from "@/lib/utils";
@@ -30,7 +30,7 @@ export default function Canvas() {
   const isUndoDisabled = currentStep < 0;
   const isRedoDisabled = currentStep === drawings.length - 1;
 
-  useEffect(() => {
+  const configBrushStyles = useCallback(() => {
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext("2d");
     if (!ctx) return;
@@ -43,6 +43,39 @@ export default function Canvas() {
 
     ctxRef.current = ctx;
   }, [isEraser, brushSize, brushColor]);
+
+  useEffect(() => {
+    const configCanvas = () => {
+      const canvas = canvasRef.current;
+      const ctx = canvas?.getContext("2d", { willReadFrequently: true });
+      if (!canvas || !ctx) return;
+
+      const existingDrawings = ctx.getImageData(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+      );
+
+      canvas.style.width = "100%";
+      canvas.style.height = "calc(100% - 5px)";
+      canvas.width = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+
+      ctx.putImageData(existingDrawings, 0, 0);
+
+      configBrushStyles();
+    };
+
+    //Also set canvas size and brush styles when component mounted
+    configCanvas();
+
+    window.addEventListener("resize", configCanvas);
+
+    return () => {
+      window.removeEventListener("resize", configCanvas);
+    };
+  }, [brushColor, brushSize, configBrushStyles, isEraser]);
 
   const handleMouseDown = (
     e: React.MouseEvent<HTMLCanvasElement, MouseEvent>
@@ -172,7 +205,7 @@ export default function Canvas() {
   };
 
   return (
-    <div className="flex flex-col justify-center gap-4 px-8 py-4">
+    <div className="h-svh w-full flex flex-col justify-center gap-4 px-8 py-4">
       <Tools
         isUndoDisabled={isUndoDisabled}
         isRedoDisabled={isRedoDisabled}
@@ -181,7 +214,7 @@ export default function Canvas() {
         onUndo={handleUndo}
         onRedo={handleRedo}
       />
-      <div className="w-full flex justify-center">
+      <div className="w-full h-full flex justify-center">
         <canvas
           ref={canvasRef}
           className="border rounded-lg"
@@ -191,8 +224,6 @@ export default function Canvas() {
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouch}
           onTouchEnd={handleTouchEnd}
-          width={1000}
-          height={550}
         />
       </div>
     </div>
