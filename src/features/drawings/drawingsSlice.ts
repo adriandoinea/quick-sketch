@@ -1,11 +1,10 @@
-import { Line } from "@/types";
+import { Drawings, Line } from "@/types";
 import { createSlice } from "@reduxjs/toolkit";
 import { PayloadAction } from "@reduxjs/toolkit/react";
 
-const initialState: { lines: Line[]; currentStep: number } =
-  localStorage.getItem("drawings")
-    ? JSON.parse(localStorage.getItem("drawings")!)
-    : { lines: [], currentStep: -1 };
+const initialState: Drawings = localStorage.getItem("drawings")
+  ? JSON.parse(localStorage.getItem("drawings")!)
+  : { lines: [], currentStep: -1 };
 
 const drawingsSlice = createSlice({
   name: "drawings",
@@ -35,6 +34,10 @@ const drawingsSlice = createSlice({
       localStorage.setItem("drawings", JSON.stringify(newState));
       return newState;
     },
+    uploadDrawings: (_, action: PayloadAction<Drawings>) => {
+      localStorage.setItem("drawings", JSON.stringify(action.payload));
+      return action.payload;
+    },
     changeStep: (state, action: PayloadAction<number>) => {
       const newState = { ...state, currentStep: action.payload };
       localStorage.setItem("drawings", JSON.stringify(newState));
@@ -43,6 +46,11 @@ const drawingsSlice = createSlice({
   },
 });
 
-export const { addDrawing, addDrawingAndSplice, resetDrawings, changeStep } =
-  drawingsSlice.actions;
+export const {
+  addDrawing,
+  addDrawingAndSplice,
+  resetDrawings,
+  uploadDrawings,
+  changeStep,
+} = drawingsSlice.actions;
 export default drawingsSlice.reducer;

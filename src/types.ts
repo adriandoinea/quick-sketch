@@ -6,6 +6,6 @@ export interface Line {
 }
 
 export interface Drawings {
-  history: Line[];
+  lines: Line[];
   currentStep: number;
 }

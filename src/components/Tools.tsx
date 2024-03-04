@@ -14,7 +14,7 @@ import {
   changeBrushSize,
   switchTool,
 } from "@/features/toolbar/toolbarSlice";
-import { Save } from "./Save";
+import Save from "./Save";
 
 interface ToolsProps {
   isUndoDisabled: boolean;
