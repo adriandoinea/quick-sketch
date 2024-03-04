@@ -5,6 +5,7 @@ import { draw } from "@/lib/utils";
 import {
   addDrawing,
   addDrawingAndSplice,
+  changeStep,
   resetDrawings,
 } from "@/features/drawings/drawingsSlice";
 import { switchTool } from "@/features/toolbar/toolbarSlice";
@@ -14,11 +15,15 @@ export default function Canvas() {
   const ctxRef = useRef<null | CanvasRenderingContext2D>(null);
 
   const drawings = useAppSelector((state) => state.drawings);
+  const { lines, currentStep } = drawings;
+
   const [isDrawing, setIsDrawing] = useState(false);
-  const [currentStep, setCurrentStep] = useState(-1);
   const [currentPoints, setCurrentPoints] = useState<
     { x: number; y: number }[]
   >([]);
+
+  const [canvasSnapshot, setCanvasSnapshot] =
+    useState<HTMLCanvasElement | null>(null);
 
   const tool = useAppSelector((state) => state.toolbar.tool);
   const brushSize = useAppSelector((state) => state.toolbar.brushSize);
@@ -28,7 +33,7 @@ export default function Canvas() {
   const dispatch = useAppDispatch();
 
   const isUndoDisabled = currentStep < 0;
-  const isRedoDisabled = currentStep === drawings.length - 1;
+  const isRedoDisabled = currentStep === lines.length - 1;
 
   const configBrushStyles = useCallback(() => {
     const canvas = canvasRef.current;
@@ -78,11 +83,14 @@ export default function Canvas() {
   }, [brushColor, brushSize, configBrushStyles, isEraser]);
 
   useEffect(() => {
-    if (drawings.length > 0) {
-      draw(drawings, drawings.length - 1, canvasRef.current);
-      setCurrentStep(drawings.length - 1);
+    if (lines.length > 0) {
+      draw(lines, currentStep, canvasRef.current);
     }
-  }, [drawings]);
+  }, [currentStep, lines]);
+
+  useEffect(() => {
+    if (canvasRef.current) setCanvasSnapshot(canvasRef.current);
+  }, []);
 
   const handleMouseDown = (
     e: React.MouseEvent<HTMLCanvasElement, MouseEvent>
@@ -148,8 +156,8 @@ export default function Canvas() {
   const handleUndo = () => {
     const prevStep = currentStep - 1;
     if (prevStep >= -1) {
-      draw(drawings, prevStep, canvasRef.current);
-      setCurrentStep(prevStep);
+      draw(lines, prevStep, canvasRef.current);
+      dispatch(changeStep(prevStep));
     }
 
     //Set the  tool to pencil if the the currentStep will be negative (nothing to draw)
@@ -160,9 +168,9 @@ export default function Canvas() {
 
   const handleRedo = () => {
     const nextStep = currentStep + 1;
-    if (nextStep < drawings.length) {
-      draw(drawings, nextStep, canvasRef.current);
-      setCurrentStep(nextStep);
+    if (nextStep < lines.length) {
+      draw(lines, nextStep, canvasRef.current);
+      dispatch(changeStep(nextStep));
     }
   };
 
@@ -178,7 +186,6 @@ export default function Canvas() {
         canvasRef.current.height
       );
 
-      setCurrentStep(-1);
       dispatch(resetDrawings());
     }
   };
@@ -201,12 +208,11 @@ export default function Canvas() {
         globalCompositeOperation: ctxRef.current.globalCompositeOperation,
       };
 
-      if (currentStep < drawings.length - 1) {
-        dispatch(addDrawingAndSplice({ drawing, index: currentStep }));
+      if (currentStep < lines.length - 1) {
+        dispatch(addDrawingAndSplice(drawing));
       } else {
         dispatch(addDrawing(drawing));
       }
-      setCurrentStep((prev) => prev + 1);
       setCurrentPoints([]);
     }
   };
@@ -214,7 +220,7 @@ export default function Canvas() {
   return (
     <div className="h-svh w-full flex flex-col justify-center gap-4 px-8 py-4">
       <Tools
-        canvas={canvasRef.current}
+        canvas={canvasSnapshot}
         isUndoDisabled={isUndoDisabled}
         isRedoDisabled={isRedoDisabled}
         isEraserDisabled={currentStep < 0}
@@ -225,7 +231,7 @@ export default function Canvas() {
       <div className="w-full h-full flex justify-center">
         <canvas
           ref={canvasRef}
-          className="border rounded-lg"
+          className="border rounded-lg select-none"
           onMouseDown={handleMouseDown}
           onMouseUp={handleMouseUp}
           onMouseMove={handleMouseMove}

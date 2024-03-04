@@ -90,6 +90,7 @@ export default function Tools({
             <span className="sr-only">Clear</span>
           </Button>
         </div>
+
         <Save canvas={canvas} />
       </div>
 
