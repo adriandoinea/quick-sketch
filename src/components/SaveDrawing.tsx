@@ -7,7 +7,11 @@ import {
 import { saveAs } from "file-saver";
 import { useAppSelector } from "@/app/hooks";
 
-export default function Save({ canvas }: { canvas: HTMLCanvasElement | null }) {
+export default function SaveDrawing({
+  canvas,
+}: {
+  canvas: HTMLCanvasElement | null;
+}) {
   const drawings = useAppSelector((state) => state.drawings);
 
   const downloadImage = () => {

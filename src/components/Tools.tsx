@@ -14,8 +14,8 @@ import {
   changeBrushSize,
   switchTool,
 } from "@/features/toolbar/toolbarSlice";
-import Save from "./Save";
-import Import from "./Import";
+import ImportDrawing from "./ImportDrawing";
+import SaveDrawing from "./SaveDrawing";
 
 interface ToolsProps {
   isUndoDisabled: boolean;
@@ -93,8 +93,8 @@ export default function Tools({
         </div>
 
         <div className="flex items-center gap-2">
-          <Import />
-          <Save canvas={canvas} />
+          <ImportDrawing />
+          <SaveDrawing canvas={canvas} />
         </div>
       </div>
 

@@ -2,7 +2,7 @@ import { useAppDispatch } from "@/app/hooks";
 import { uploadDrawings } from "@/features/drawings/drawingsSlice";
 import { UploadCloud } from "lucide-react";
 
-export default function Import() {
+export default function ImportDrawing() {
   const dispatch = useAppDispatch();
 
   const uploadJSON = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -21,20 +21,19 @@ export default function Import() {
         ) {
           dispatch(uploadDrawings(data));
         } else {
-          alert(
-            "Invalid JSON data format. This might be caused by a wrong data type."
-          );
+          alert("Invalid JSON data format.");
           console.error("Invalid JSON data format.");
         }
       } catch (error) {
         console.error("Error parsing JSON:", error);
       } finally {
-        //Let the user upload the same drawing as before
+        //Allow the user upload the same drawing as before
         event.target.value = "";
       }
     };
 
     reader.onerror = (error) => {
+      alert("An error occurred while reading the file.");
       console.error("Error occurred while reading the file:", error);
     };
     reader.readAsText(file);
