@@ -14,6 +14,7 @@ import {
   changeBrushSize,
   switchTool,
 } from "@/features/toolbar/toolbarSlice";
+import { Save } from "./Save";
 
 interface ToolsProps {
   isUndoDisabled: boolean;
@@ -22,6 +23,7 @@ interface ToolsProps {
   onClear: () => void;
   onUndo: () => void;
   onRedo: () => void;
+  canvas: HTMLCanvasElement | null;
 }
 
 export default function Tools({
@@ -31,6 +33,7 @@ export default function Tools({
   onClear,
   onUndo,
   onRedo,
+  canvas,
 }: ToolsProps) {
   const tool = useAppSelector((state) => state.toolbar.tool);
   const brushSize = useAppSelector((state) => state.toolbar.brushSize);
@@ -52,39 +55,42 @@ export default function Tools({
 
   return (
     <div className="grid gap-4">
-      <div className="flex items-center gap-4">
-        <Button
-          className="rounded-full border w-10 h-10"
-          variant="outline"
-          size="icon"
-          onClick={onUndo}
-          disabled={isUndoDisabled}
-          title="Undo"
-        >
-          <ArrowLeftCircleIcon className="w-4 h-4" />
-          <span className="sr-only">Undo</span>
-        </Button>
-        <Button
-          className="rounded-full border w-10 h-10"
-          variant="outline"
-          size="icon"
-          onClick={onRedo}
-          disabled={isRedoDisabled}
-          title="Redo"
-        >
-          <ArrowRightCircleIcon className="w-4 h-4" />
-          <span className="sr-only">Redo</span>
-        </Button>
-        <Button
-          className="rounded-full border w-10 h-10"
-          variant="outline"
-          size="icon"
-          onClick={onClear}
-          title="Clear"
-        >
-          <TrashIcon className="w-4 h-4" />
-          <span className="sr-only">Clear</span>
-        </Button>
+      <div className="flex justify-between">
+        <div className="flex items-center gap-4">
+          <Button
+            className="rounded-full border w-10 h-10"
+            variant="outline"
+            size="icon"
+            onClick={onUndo}
+            disabled={isUndoDisabled}
+            title="Undo"
+          >
+            <ArrowLeftCircleIcon className="w-4 h-4" />
+            <span className="sr-only">Undo</span>
+          </Button>
+          <Button
+            className="rounded-full border w-10 h-10"
+            variant="outline"
+            size="icon"
+            onClick={onRedo}
+            disabled={isRedoDisabled}
+            title="Redo"
+          >
+            <ArrowRightCircleIcon className="w-4 h-4" />
+            <span className="sr-only">Redo</span>
+          </Button>
+          <Button
+            className="rounded-full border w-10 h-10"
+            variant="outline"
+            size="icon"
+            onClick={onClear}
+            title="Clear"
+          >
+            <TrashIcon className="w-4 h-4" />
+            <span className="sr-only">Clear</span>
+          </Button>
+        </div>
+        <Save canvas={canvas} />
       </div>
 
       <Separator />

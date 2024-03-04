@@ -214,6 +214,7 @@ export default function Canvas() {
   return (
     <div className="h-svh w-full flex flex-col justify-center gap-4 px-8 py-4">
       <Tools
+        canvas={canvasRef.current}
         isUndoDisabled={isUndoDisabled}
         isRedoDisabled={isRedoDisabled}
         isEraserDisabled={currentStep < 0}
