@@ -15,6 +15,7 @@ import {
   switchTool,
 } from "@/features/toolbar/toolbarSlice";
 import Save from "./Save";
+import Import from "./Import";
 
 interface ToolsProps {
   isUndoDisabled: boolean;
@@ -91,7 +92,10 @@ export default function Tools({
           </Button>
         </div>
 
-        <Save canvas={canvas} />
+        <div className="flex items-center gap-2">
+          <Import />
+          <Save canvas={canvas} />
+        </div>
       </div>
 
       <Separator />

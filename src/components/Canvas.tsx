@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import Tools from "@/components/Tools";
 import { useAppDispatch, useAppSelector } from "@/app/hooks";
 import { draw } from "@/lib/utils";
@@ -9,11 +9,9 @@ import {
   resetDrawings,
 } from "@/features/drawings/drawingsSlice";
 import { switchTool } from "@/features/toolbar/toolbarSlice";
+import { useCanvasDrawing } from "@/hooks/useCanvasDrawing";
 
 export default function Canvas() {
-  const canvasRef = useRef<null | HTMLCanvasElement>(null);
-  const ctxRef = useRef<null | CanvasRenderingContext2D>(null);
-
   const drawings = useAppSelector((state) => state.drawings);
   const { lines, currentStep } = drawings;
 
@@ -22,81 +20,28 @@ export default function Canvas() {
     { x: number; y: number }[]
   >([]);
 
-  const [canvasSnapshot, setCanvasSnapshot] =
-    useState<HTMLCanvasElement | null>(null);
-
   const tool = useAppSelector((state) => state.toolbar.tool);
   const brushSize = useAppSelector((state) => state.toolbar.brushSize);
   const brushColor = useAppSelector((state) => state.toolbar.brushColor);
   const isEraser = tool === "eraser";
+
+  const { canvasRef, ctx, canvasSnapshot } = useCanvasDrawing({
+    brushColor,
+    brushSize,
+    isEraser,
+    drawings,
+  });
 
   const dispatch = useAppDispatch();
 
   const isUndoDisabled = currentStep < 0;
   const isRedoDisabled = currentStep === lines.length - 1;
 
-  const configBrushStyles = useCallback(() => {
-    const canvas = canvasRef.current;
-    const ctx = canvas?.getContext("2d");
-    if (!ctx) return;
-    ctx.strokeStyle = isEraser ? "white" : brushColor;
-    ctx.fillStyle = isEraser ? "white" : brushColor;
-    ctx.lineWidth = brushSize;
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-    ctx.globalCompositeOperation = isEraser ? "destination-out" : "source-over";
-
-    ctxRef.current = ctx;
-  }, [isEraser, brushSize, brushColor]);
-
-  useEffect(() => {
-    const configCanvas = () => {
-      const canvas = canvasRef.current;
-      const ctx = canvas?.getContext("2d", { willReadFrequently: true });
-      if (!canvas || !ctx) return;
-
-      const existingDrawings = ctx.getImageData(
-        0,
-        0,
-        canvas.width,
-        canvas.height
-      );
-
-      canvas.style.width = "100%";
-      canvas.style.height = "calc(100% - 5px)";
-      canvas.width = canvas.offsetWidth;
-      canvas.height = canvas.offsetHeight;
-
-      ctx.putImageData(existingDrawings, 0, 0);
-
-      configBrushStyles();
-    };
-
-    //Also set canvas size and brush styles when component mounted
-    configCanvas();
-
-    window.addEventListener("resize", configCanvas);
-
-    return () => {
-      window.removeEventListener("resize", configCanvas);
-    };
-  }, [brushColor, brushSize, configBrushStyles, isEraser]);
-
-  useEffect(() => {
-    if (lines.length > 0) {
-      draw(lines, currentStep, canvasRef.current);
-    }
-  }, [currentStep, lines]);
-
-  useEffect(() => {
-    if (canvasRef.current) setCanvasSnapshot(canvasRef.current);
-  }, []);
-
   const handleMouseDown = (
     e: React.MouseEvent<HTMLCanvasElement, MouseEvent>
   ) => {
-    ctxRef.current?.beginPath();
-    ctxRef.current?.moveTo(e.nativeEvent.offsetX, e.nativeEvent.offsetY);
+    ctx?.beginPath();
+    ctx?.moveTo(e.nativeEvent.offsetX, e.nativeEvent.offsetY);
     setCurrentPoints([{ x: e.nativeEvent.offsetX, y: e.nativeEvent.offsetY }]);
     setIsDrawing(true);
   };
@@ -107,8 +52,8 @@ export default function Canvas() {
     if (!isDrawing) {
       return;
     }
-    ctxRef.current?.lineTo(e.nativeEvent.offsetX, e.nativeEvent.offsetY);
-    ctxRef.current?.stroke();
+    ctx?.lineTo(e.nativeEvent.offsetX, e.nativeEvent.offsetY);
+    ctx?.stroke();
 
     setCurrentPoints((prev) => [
       ...prev,
@@ -127,8 +72,8 @@ export default function Canvas() {
     const rect = canvasRef.current.getBoundingClientRect();
     const x = e.touches[0].clientX - rect.x;
     const y = e.touches[0].clientY - rect.y;
-    ctxRef.current?.beginPath();
-    ctxRef.current?.moveTo(x, y);
+    ctx?.beginPath();
+    ctx?.moveTo(x, y);
     setCurrentPoints([{ x, y }]);
     setIsDrawing(true);
   };
@@ -140,8 +85,8 @@ export default function Canvas() {
     const rect = canvasRef.current.getBoundingClientRect();
     const x = e.touches[0].clientX - rect.x;
     const y = e.touches[0].clientY - rect.y;
-    ctxRef.current?.lineTo(x, y);
-    ctxRef.current?.stroke();
+    ctx?.lineTo(x, y);
+    ctx?.stroke();
 
     setCurrentPoints((prev) => [...prev, { x, y }]);
   };
@@ -179,12 +124,7 @@ export default function Canvas() {
       "Are you sure you want to clear your drawings?"
     );
     if (confirmation && canvasRef.current) {
-      ctxRef.current?.clearRect(
-        0,
-        0,
-        canvasRef.current.width,
-        canvasRef.current.height
-      );
+      ctx?.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
 
       dispatch(resetDrawings());
     }
@@ -192,20 +132,20 @@ export default function Canvas() {
 
   const checkIfOnlyClicked = () => {
     // Checking if it's just a click
-    if (ctxRef.current && currentPoints.length === 1) {
+    if (ctx && currentPoints.length === 1) {
       const { x, y } = currentPoints[0];
-      ctxRef.current.arc(x, y, brushSize / 2, 0, 2 * Math.PI);
-      ctxRef.current.fill();
+      ctx.arc(x, y, brushSize / 2, 0, 2 * Math.PI);
+      ctx.fill();
     }
   };
 
   const storeDrawing = () => {
-    if (currentPoints.length > 0 && ctxRef.current) {
+    if (currentPoints.length > 0 && ctx) {
       const drawing = {
-        color: ctxRef.current.strokeStyle,
-        lineWidth: ctxRef.current.lineWidth,
+        color: ctx.strokeStyle,
+        lineWidth: ctx.lineWidth,
         points: currentPoints,
-        globalCompositeOperation: ctxRef.current.globalCompositeOperation,
+        globalCompositeOperation: ctx.globalCompositeOperation,
       };
 
       if (currentStep < lines.length - 1) {
