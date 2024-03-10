@@ -127,6 +127,7 @@ export default function Canvas() {
       ctx?.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
 
       dispatch(resetDrawings());
+      dispatch(switchTool("pencil"));
     }
   };
 

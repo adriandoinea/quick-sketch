@@ -40,21 +40,13 @@ export function useCanvasDrawing({
       const ctx = canvas?.getContext("2d", { willReadFrequently: true });
       if (!canvas || !ctx) return;
 
-      const existingDrawings = ctx.getImageData(
-        0,
-        0,
-        canvas.width,
-        canvas.height
-      );
-
       canvas.style.width = "100%";
       canvas.style.height = "calc(100% - 5px)";
       canvas.width = canvas.offsetWidth;
       canvas.height = canvas.offsetHeight;
 
-      ctx.putImageData(existingDrawings, 0, 0);
-
       configBrushStyles();
+      draw(lines, currentStep, canvasRef.current);
     };
 
     //Also set canvas size and brush styles when component mounted
@@ -65,7 +57,7 @@ export function useCanvasDrawing({
     return () => {
       window.removeEventListener("resize", configCanvas);
     };
-  }, [brushColor, brushSize, configBrushStyles, isEraser]);
+  }, [brushColor, brushSize, configBrushStyles, currentStep, isEraser, lines]);
 
   useEffect(() => {
     if (lines.length > 0) {
