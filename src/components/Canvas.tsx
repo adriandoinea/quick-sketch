@@ -169,13 +169,14 @@ export default function Canvas() {
         onUndo={handleUndo}
         onRedo={handleRedo}
       />
-      <div className="w-full h-full flex justify-center">
+      <div className="w-full h-full flex justify-center border rounded-lg">
         <canvas
           ref={canvasRef}
-          className="border rounded-lg select-none"
+          className="select-none"
           onMouseDown={handleMouseDown}
-          onMouseUp={handleMouseUp}
           onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseUp}
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouch}
           onTouchEnd={handleTouchEnd}

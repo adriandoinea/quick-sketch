@@ -57,7 +57,7 @@ export function useCanvasDrawing({
     return () => {
       window.removeEventListener("resize", configCanvas);
     };
-  }, [brushColor, brushSize, configBrushStyles, currentStep, isEraser, lines]);
+  }, [configBrushStyles, currentStep, lines]);
 
   useEffect(() => {
     if (lines.length > 0) {
